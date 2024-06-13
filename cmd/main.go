@@ -60,6 +60,8 @@ func run(cliCtx *cli.Context) error {
 		panic(err)
 	}
 
+	// TODO: init logging
+
 	store, err := db.NewStorage(cfg.DB.File)
 	if err != nil {
 		panic(err)

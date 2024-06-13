@@ -1,7 +1,7 @@
-[LX]
-ChainId = 2222
-RpcURL = "localhost:2222"
-BridgeAddress = "0xDEADBEEF"
+[LX] # Bali
+ChainId = 2440
+RpcURL = "https://rpc-legacy.internal.zkevm-rpc.com/"
+BridgeAddress = "0x1348947e282138d8f377b467f7d9c2eb0f335d1f"
 
 [LY]
 ChainId = 3333
