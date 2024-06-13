@@ -1,0 +1,12 @@
+[LX]
+ChainId = 2222
+RpcURL = "localhost:2222"
+BridgeAddress = "0xDEADBEEF"
+
+[LY]
+ChainId = 3333
+RpcURL = "localhost:3333"
+BridgeAddress = "0xCAFEBABE"
+
+[DB]
+File = "dist/storage.db"
