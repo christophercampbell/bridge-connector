@@ -1,12 +1,21 @@
+[Log]
+Environment = "development" # "production" or "development"
+Level = "debug"
+Outputs = ["stderr"]
+
+## Contract addresses are the same on each chain (deterministically deployed)
+BridgeEthMainnetAddr = "0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe"
+GlobalExitRootAddr = "0x580bda1e7A0CFAe92Fa7F6c20A3794F169CE3CFb"
+RollupManagerAddr = "0x5132A183E9F3CB7C848b0AAC5Ae0c4f0491B7aB2"
+
 [LX] # Bali
 ChainId = 2440
 RpcURL = "https://rpc-legacy.internal.zkevm-rpc.com/"
-BridgeAddress = "0x1348947e282138d8f377b467f7d9c2eb0f335d1f"
 
 [LY]
 ChainId = 3333
 RpcURL = "localhost:3333"
-BridgeAddress = "0xCAFEBABE"
 
 [DB]
 File = "dist/storage.db"
+

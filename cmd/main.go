@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
-	"log"
+	syslog "log"
 	"os"
+	"os/signal"
 
 	info "github.com/christophercampbell/bridge-connector"
 	"github.com/christophercampbell/bridge-connector/config"
 	"github.com/christophercampbell/bridge-connector/db"
 	"github.com/christophercampbell/bridge-connector/indexer"
+	"github.com/christophercampbell/bridge-connector/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -49,7 +51,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		syslog.Fatal(err)
 		os.Exit(1)
 	}
 }
@@ -60,8 +62,9 @@ func run(cliCtx *cli.Context) error {
 		panic(err)
 	}
 
-	// TODO: init logging
+	log.Init(cfg.Log)
 
+	log.Infof("initializing storage to %v", cfg.DB.File)
 	store, err := db.NewStorage(cfg.DB.File)
 	if err != nil {
 		panic(err)
@@ -73,6 +76,7 @@ func run(cliCtx *cli.Context) error {
 		panic(err)
 	}
 	defer lxService.Stop()
+	log.Info("Starting LX indexer")
 	lxService.Start()
 
 	lyService, err := indexer.New(cfg.LY, store)
@@ -80,7 +84,22 @@ func run(cliCtx *cli.Context) error {
 		panic(err)
 	}
 	defer lyService.Stop()
+	log.Info("Starting LY indexer")
 	lyService.Start()
 
+	waitInterrupt()
+
 	return nil
+}
+
+func waitInterrupt() {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt)
+	for sig := range signals {
+		switch sig {
+		case os.Interrupt, os.Kill:
+			log.Info("terminating application gracefully...")
+			os.Exit(0)
+		}
+	}
 }
