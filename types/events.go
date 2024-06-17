@@ -1,6 +1,10 @@
 package types
 
-import "github.com/umbracle/ethgo"
+import (
+	"encoding/json"
+
+	"github.com/umbracle/ethgo"
+)
 
 type BridgeEvent struct {
 	Removed          bool                   `json:"removed"`
@@ -10,4 +14,22 @@ type BridgeEvent struct {
 	TransactionHash  ethgo.Hash             `json:"transaction_hash"`
 	EventType        uint8                  `json:"event_type"`
 	Data             map[string]interface{} `json:"event_data"`
+}
+
+func (be *BridgeEvent) JsonData() (string, error) {
+	bytes, err := json.Marshal(be.Data)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func (be *BridgeEvent) SetData(jsonStr string) error {
+	var data map[string]interface{}
+	err := json.Unmarshal([]byte(jsonStr), &data)
+	if err != nil {
+		return err
+	}
+	be.Data = data
+	return nil
 }

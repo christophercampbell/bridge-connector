@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS events (
 	tx_hash  	 TEXT,
     event_type   INTEGER,
     removed      INTEGER,
+    data 		 BLOB,
     PRIMARY KEY (chain_id, block_number, tx_index)                  
 );
 CREATE INDEX IF NOT EXISTS events_chain_id_idx ON events(chain_id);
@@ -21,14 +22,18 @@ CREATE INDEX IF NOT EXISTS events_event_type_idx ON events(event_type);
 
 	upsertEventStatement string = `
 INSERT INTO events 
-    (chain_id, block_number, tx_index, log_index, tx_hash, event_type, removed) 
+    (chain_id, block_number, tx_index, log_index, tx_hash, event_type, removed, data) 
 VALUES 
-    (?, ?, ?, ?, ?, ?, ?, ?)
+    (?, ?, ?, ?, ?, ?, ?, json(?))
 ON CONFLICT DO UPDATE 
-    SET log_index = EXCLUDED.log_index, tx_hash = EXCLUDED.tx_hash, event_type = EXCLUDED.event_type, removed = EXCLUDED.removed`
+    SET log_index = EXCLUDED.log_index, 
+        tx_hash = EXCLUDED.tx_hash, 
+        event_type = EXCLUDED.event_type, 
+        removed = EXCLUDED.removed, 
+        data = EXCLUDED.data`
 
 	selectEventsStatement string = `
-SELECT block_number, tx_index, log_index, tx_hash, event_type, removed 
+SELECT block_number, tx_index, log_index, tx_hash, event_type, removed, data 
 FROM events
 	WHERE chain_id = ? 
 	  AND block_number BETWEEN ? AND ?` // BETWEEN is inclusive on both ends

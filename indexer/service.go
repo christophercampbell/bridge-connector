@@ -73,20 +73,20 @@ func (s *Service) Start(parentContext context.Context) error {
 
 func (s *Service) processEvents(ctx context.Context) {
 	handleErrs := make(chan error)
-	limiter := time.Tick(s.rateLimit)
 	for {
-		select { // this is a non-blocking select
+		select {
 		case err := <-handleErrs:
 			log.Errorf("could not process events: %+v", err)
-			<-time.After(1 * time.Second) // TODO: configurable backoff duration, make it exponential?
+			<-time.After(1 * time.Second) // TODO: exponential backoff
 		case <-ctx.Done():
 			return
 		default:
 		}
 
-		next := s.lastBlock + 1
+		// basic rate limiter
+		<-time.After(s.rateLimit)
 
-		<-limiter
+		next := s.lastBlock + 1
 		events, err := s.retrieveEvents(next, s.batchSize)
 		if err != nil {
 			handleErrs <- err
@@ -109,8 +109,8 @@ func (s *Service) processEvents(ctx context.Context) {
 	}
 }
 
-func (s *Service) retrieveEvents(start uint64, count uint) ([]types.BridgeEvent, error) {
-	from := ethgo.BlockNumber(start)
+func (s *Service) retrieveEvents(startBlock uint64, count uint) ([]types.BridgeEvent, error) {
+	from := ethgo.BlockNumber(startBlock)
 	to := from + ethgo.BlockNumber(count)
 	filter := ethgo.LogFilter{
 		// Address:   []ethgo.Address{ethgo.HexToAddress(s.config.)},
@@ -124,10 +124,9 @@ func (s *Service) retrieveEvents(start uint64, count uint) ([]types.BridgeEvent,
 	}
 	var events []types.BridgeEvent
 	for _, le := range logs {
-		event, err := s.parseEvent(le)
-		if err != nil {
-			// skip or fail?
-			return nil, err
+		event := maybeFromLog(le)
+		if event == nil {
+			continue
 		}
 		events = append(events, *event)
 	}
@@ -138,8 +137,4 @@ func (s *Service) Stop() {
 	if s.cancelFunc != nil {
 		s.cancelFunc()
 	}
-}
-
-func (s *Service) parseEvent(el *ethgo.Log) (*types.BridgeEvent, error) {
-	return nil, nil
 }

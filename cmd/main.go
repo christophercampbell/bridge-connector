@@ -12,6 +12,8 @@ import (
 	"github.com/christophercampbell/bridge-connector/db"
 	"github.com/christophercampbell/bridge-connector/indexer"
 	"github.com/christophercampbell/bridge-connector/log"
+	"github.com/christophercampbell/bridge-connector/types"
+	"github.com/umbracle/ethgo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -72,6 +74,9 @@ func run(cliCtx *cli.Context) error {
 	}
 	defer store.Close()
 
+	// remove
+	testStore(store)
+
 	parentContext := context.Background()
 
 	lxService, err := indexer.New(cfg.LX, store)
@@ -81,16 +86,6 @@ func run(cliCtx *cli.Context) error {
 	defer lxService.Stop()
 	log.Info("Starting LX indexer")
 	lxService.Start(parentContext)
-
-	/*
-		lyService, err := indexer.New(cfg.LY, store)
-		if err != nil {
-			panic(err)
-		}
-		defer lyService.Stop()
-		log.Info("Starting LY indexer")
-		lyService.Start(parentContext)
-	*/
 
 	waitInterrupt()
 
@@ -107,4 +102,29 @@ func waitInterrupt() {
 			os.Exit(0)
 		}
 	}
+}
+
+func testStore(store *db.Storage) {
+	data := make(map[string]interface{})
+	data["name"] = "foobar"
+	data["value"] = 1
+	data["colors"] = []string{"red", "blue"}
+	be := types.BridgeEvent{
+		Removed:          false,
+		BlockNumber:      0,
+		TransactionIndex: 0,
+		LogIndex:         0,
+		TransactionHash:  ethgo.Hash{},
+		EventType:        0,
+		Data:             data,
+	}
+
+	var events []types.BridgeEvent
+	events = append(events, be)
+
+	err := store.StoreEvents(1, events)
+	if err != nil {
+		panic(err)
+	}
+
 }

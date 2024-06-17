@@ -12,7 +12,7 @@ RollupManagerAddr = "0x5132A183E9F3CB7C848b0AAC5Ae0c4f0491B7aB2"
 ChainId = 2440
 RpcURL = "https://rpc-legacy.internal.zkevm-rpc.com/"
 [LX.Indexer]
-    RateLimit = "1s"
+    RateLimit = "100ms" # 1 request per duration
     BlockBatchSize = 1000
 
 [LY]

@@ -47,6 +47,12 @@ func (s *Storage) StoreEvents(chainId uint, events []types.BridgeEvent) error {
 		return err
 	}
 	for _, e := range events {
+		var json string
+		json, err = e.JsonData()
+		if err != nil {
+			log.Warnf("failed to parse json data for chain=%d, block=%d, txId=%d, type=%d",
+				chainId, e.BlockNumber, e.TransactionIndex, e.EventType)
+		}
 		_, err = tx.Exec(upsertEventStatement,
 			chainId,
 			e.BlockNumber,
@@ -54,7 +60,8 @@ func (s *Storage) StoreEvents(chainId uint, events []types.BridgeEvent) error {
 			e.LogIndex,
 			e.TransactionHash.String(),
 			e.EventType,
-			e.Removed)
+			e.Removed,
+			json)
 		if err != nil {
 			rbErr := tx.Rollback()
 			if rbErr != nil {
@@ -81,7 +88,8 @@ func (s *Storage) ReadEvents(chainId uint, fromBlock, toBlock uint64) ([]types.B
 		var hash string
 		var et uint8
 		var r bool
-		if err = rows.Scan(&bn, &tx, &lx, &hash, &et, &r); err != nil {
+		var d sql.NullString
+		if err = rows.Scan(&bn, &tx, &lx, &hash, &et, &r, &d); err != nil {
 			return nil, err
 		}
 		e := types.BridgeEvent{
@@ -91,8 +99,16 @@ func (s *Storage) ReadEvents(chainId uint, fromBlock, toBlock uint64) ([]types.B
 			LogIndex:         lx,
 			TransactionHash:  ethgo.HexToHash(hash),
 			EventType:        et,
-			Data:             nil, // handle data later
 		}
+
+		if d.Valid {
+			err = e.SetData(d.String)
+			if err != nil {
+				log.Warnf("failed to read data column for chain=%d, block=%d, txId=%d, type=%d",
+					chainId, e.BlockNumber, e.TransactionIndex, e.EventType)
+			}
+		}
+
 		events = append(events, e)
 	}
 	return events, nil
