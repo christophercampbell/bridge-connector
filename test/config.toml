@@ -11,10 +11,14 @@ RollupManagerAddr = "0x5132A183E9F3CB7C848b0AAC5Ae0c4f0491B7aB2"
 [LX] # Bali
 ChainId = 2440
 RpcURL = "https://rpc-legacy.internal.zkevm-rpc.com/"
+[LX.Indexer]
+    RateLimit = "1s"
+    BlockBatchSize = 1000
 
 [LY]
 ChainId = 3333
 RpcURL = "localhost:3333"
+
 
 [DB]
 File = "dist/storage.db"

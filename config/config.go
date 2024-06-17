@@ -19,7 +19,7 @@ type ChainConfig struct {
 
 type IndexerConfig struct {
 	Timeout        Duration `mapstructure:"Timeout"`
-	RetryPeriod    Duration `mapstructure:"RetryPeriod"`
+	RateLimit      Duration `mapstructure:"RateLimit"`
 	BlockBatchSize uint     `mapstructure:"BlockBatchSize"`
 	GenesisBlock   uint64   `mapstructure:"GenesisBlock"`
 }

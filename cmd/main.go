@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	syslog "log"
 	"os"
@@ -71,21 +72,25 @@ func run(cliCtx *cli.Context) error {
 	}
 	defer store.Close()
 
+	parentContext := context.Background()
+
 	lxService, err := indexer.New(cfg.LX, store)
 	if err != nil {
 		panic(err)
 	}
 	defer lxService.Stop()
 	log.Info("Starting LX indexer")
-	lxService.Start()
+	lxService.Start(parentContext)
 
-	lyService, err := indexer.New(cfg.LY, store)
-	if err != nil {
-		panic(err)
-	}
-	defer lyService.Stop()
-	log.Info("Starting LY indexer")
-	lyService.Start()
+	/*
+		lyService, err := indexer.New(cfg.LY, store)
+		if err != nil {
+			panic(err)
+		}
+		defer lyService.Stop()
+		log.Info("Starting LY indexer")
+		lyService.Start(parentContext)
+	*/
 
 	waitInterrupt()
 
