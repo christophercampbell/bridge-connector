@@ -1,23 +1,63 @@
+## Contract addresses are the same on each chain (deterministically deployed)
+[Contracts]
+BridgeEthMainnetAddr = "0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe"
+GlobalExitRootAddr = "0x580bda1e7A0CFAe92Fa7F6c20A3794F169CE3CFb"
+RollupManagerAddr = "0x5132A183E9F3CB7C848b0AAC5Ae0c4f0491B7aB2"
+
 [Log]
 Environment = "development" # "production" or "development"
 Level = "debug"
 Outputs = ["stderr"]
 
-## Contract addresses are the same on each chain (deterministically deployed)
-BridgeEthMainnetAddr = "0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe"
-GlobalExitRootAddr = "0x580bda1e7A0CFAe92Fa7F6c20A3794F169CE3CFb"
-RollupManagerAddr = "0x5132A183E9F3CB7C848b0AAC5Ae0c4f0491B7aB2"
-
-[LX] # Bali
+[[Chains]] # Bali
+Name = "Bali"
+Enabled = true
 ChainId = 2440
-RpcURL = "https://rpc-legacy.internal.zkevm-rpc.com/"
-[LX.Indexer]
+RpcURL = "https://permissionless.internal.zkevm-rpc.com"
+[Chains.Indexer]
     RateLimit = "100ms" # 1 request per duration
     BlockBatchSize = 1000
+    GenesisBlock = 3564975
 
-[LY]
-ChainId = 3333
-RpcURL = "localhost:3333"
+[[Chains]]
+Name = "Mainnet"
+Enabled = false
+ChainId = 1
+RpcURL = "???"  ### need RPC for mainnet
+[Chains.Indexer]
+RateLimit = "100ms"
+BlockBatchSize = 1000
+GenesisBlock = 18064563
+
+[[Chains]] # ZKE-Mainnet
+Name = "ZKE-Mainnet"
+Enabled = true
+ChainId = 1101
+RpcURL = "https://zkevm-rpc.com/"
+[Chains.Indexer]
+RateLimit = "100ms" # 1 request per duration
+BlockBatchSize = 100 ## 1000 returns too many events sometimes
+GenesisBlock = 0
+
+[[Chains]] # Astar-zkevm
+Name = "Astar"
+Enabled = true
+ChainId = 3776
+RpcURL = "https://rpc.astar-zkevm.gelato.digital"
+[Chains.Indexer]
+RateLimit = "100ms" # 1 request per duration
+BlockBatchSize = 1000
+GenesisBlock = 0
+
+[[Chains]] # OKX
+Name = "OKX"
+Enabled = true
+ChainId = 196
+RpcURL = "https://rpc.xlayer.tech"
+[Chains.Indexer]
+RateLimit = "100ms" # 1 request per duration
+BlockBatchSize = 1000
+GenesisBlock = 0
 
 
 [DB]

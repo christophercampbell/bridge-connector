@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
@@ -15,7 +16,9 @@ import (
 )
 
 type Service struct {
+	name       string
 	chainId    uint
+	contracts  []ethgo.Address
 	store      *db.Storage
 	rpc        *jsonrpc.Client
 	batchSize  uint
@@ -25,7 +28,7 @@ type Service struct {
 	rateLimit  time.Duration
 }
 
-func New(config config.ChainConfig, store *db.Storage) (*Service, error) {
+func New(config config.ChainConfig, contracts config.Contracts, store *db.Storage) (*Service, error) {
 	jsonrpcClient, err := jsonrpc.NewClient(config.RpcURL)
 	if err != nil {
 		return nil, err
@@ -40,7 +43,9 @@ func New(config config.ChainConfig, store *db.Storage) (*Service, error) {
 				config.RpcURL, config.ChainId, chainId.Uint64())
 	}
 	service := Service{
+		name:       config.Name,
 		chainId:    config.ChainId,
+		contracts:  contracts.Addresses(),
 		store:      store,
 		rpc:        jsonrpcClient,
 		batchSize:  config.IndexerConfig.BlockBatchSize,
@@ -72,12 +77,8 @@ func (s *Service) Start(parentContext context.Context) error {
 }
 
 func (s *Service) processEvents(ctx context.Context) {
-	handleErrs := make(chan error)
 	for {
-		select {
-		case err := <-handleErrs:
-			log.Errorf("could not process events: %+v", err)
-			<-time.After(1 * time.Second) // TODO: exponential backoff
+		select { // non-blocking selection
 		case <-ctx.Done():
 			return
 		default:
@@ -89,37 +90,52 @@ func (s *Service) processEvents(ctx context.Context) {
 		next := s.lastBlock + 1
 		events, err := s.retrieveEvents(next, s.batchSize)
 		if err != nil {
-			handleErrs <- err
+			log.Errorf("could not retrieve events: %+v", err)
 			continue
 		}
 
 		err = s.store.StoreEvents(s.chainId, events)
 		if err != nil {
-			handleErrs <- err
+			log.Errorf("could not store events: %+v", err)
 			continue
 		}
 
-		err = s.store.UpdateLastProcessedBlock(s.chainId, next+uint64(s.batchSize))
+		// Don't advance beyond last block
+		chainEnd, err := s.rpc.Eth().BlockNumber()
 		if err != nil {
-			handleErrs <- err
+			log.Errorf("failed to get chain block length: %+v", err)
+			continue
+		}
+		youngestBlock := uint64(math.Min(float64(chainEnd), float64(next+uint64(s.batchSize))))
+
+		err = s.store.UpdateLastProcessedBlock(s.chainId, youngestBlock)
+		if err != nil {
+			log.Errorf("could not update last processed block: %+v", err)
 			continue
 		}
 
-		s.lastBlock = next + uint64(s.batchSize)
+		s.lastBlock = youngestBlock
 	}
 }
+
+// metrics should be kept for block rate & event rate & estimation of sync status
 
 func (s *Service) retrieveEvents(startBlock uint64, count uint) ([]types.BridgeEvent, error) {
 	from := ethgo.BlockNumber(startBlock)
 	to := from + ethgo.BlockNumber(count)
 	filter := ethgo.LogFilter{
-		// Address:   []ethgo.Address{ethgo.HexToAddress(s.config.)},
+		Address:   s.contracts,
 		BlockHash: nil,
 		From:      &from,
 		To:        &to,
 	}
+
 	logs, err := s.rpc.Eth().GetLogs(&filter)
 	if err != nil {
+
+		// Might have to handle this error: {"code":-32602,"message":"query returned more than 10000 results"}
+		// Maybe the count parameter is adaptive?
+
 		return nil, err
 	}
 	var events []types.BridgeEvent

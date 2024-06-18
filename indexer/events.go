@@ -109,6 +109,9 @@ var (
 )
 
 func maybeFromLog(l *ethgo.Log) *types.BridgeEvent {
+	if len(l.Topics) == 0 {
+		return nil
+	}
 	if et, ok := bridgeEventTypeMap[l.Topics[0]]; !ok {
 		return nil
 	} else {

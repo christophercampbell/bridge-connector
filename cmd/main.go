@@ -12,8 +12,6 @@ import (
 	"github.com/christophercampbell/bridge-connector/db"
 	"github.com/christophercampbell/bridge-connector/indexer"
 	"github.com/christophercampbell/bridge-connector/log"
-	"github.com/christophercampbell/bridge-connector/types"
-	"github.com/umbracle/ethgo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -74,22 +72,34 @@ func run(cliCtx *cli.Context) error {
 	}
 	defer store.Close()
 
-	// remove
-	testStore(store)
-
 	parentContext := context.Background()
 
-	lxService, err := indexer.New(cfg.LX, store)
-	if err != nil {
-		panic(err)
+	var stopFuncs []context.CancelFunc
+
+	for _, chain := range cfg.Chains {
+		if !chain.Enabled {
+			log.Infof("Disabled %s indexer, chain_id %d", chain.Name, chain.ChainId)
+			continue
+		}
+		indexer, err := indexer.New(chain, cfg.Contracts, store)
+		if err != nil {
+			panic(err)
+		}
+		stopFuncs = append(stopFuncs, indexer.Stop)
+		log.Infof("Starting %s indexer, chain_id %d", chain.Name, chain.ChainId)
+		indexer.Start(parentContext)
 	}
-	defer lxService.Stop()
-	log.Info("Starting LX indexer")
-	lxService.Start(parentContext)
+	defer stopAll(stopFuncs)
 
 	waitInterrupt()
 
 	return nil
+}
+
+func stopAll(stopFuncs []context.CancelFunc) {
+	for _, stop := range stopFuncs {
+		stop()
+	}
 }
 
 func waitInterrupt() {
@@ -102,29 +112,4 @@ func waitInterrupt() {
 			os.Exit(0)
 		}
 	}
-}
-
-func testStore(store *db.Storage) {
-	data := make(map[string]interface{})
-	data["name"] = "foobar"
-	data["value"] = 1
-	data["colors"] = []string{"red", "blue"}
-	be := types.BridgeEvent{
-		Removed:          false,
-		BlockNumber:      0,
-		TransactionIndex: 0,
-		LogIndex:         0,
-		TransactionHash:  ethgo.Hash{},
-		EventType:        0,
-		Data:             data,
-	}
-
-	var events []types.BridgeEvent
-	events = append(events, be)
-
-	err := store.StoreEvents(1, events)
-	if err != nil {
-		panic(err)
-	}
-
 }
