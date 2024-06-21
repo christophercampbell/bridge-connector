@@ -77,34 +77,34 @@ var (
 )
 
 const (
-	BridgeEventL1InfoTree = iota
-	BridgeEventV1GER
-	BridgeEventDeposit
-	BridgeEventV2Claim
-	BridgeEventV1Claim
-	BridgeEventVerifyBatchesEtrog
-	BridgeEventVerifyTrustedSequencer
+	L1InfoTree = iota
+	V1GER
+	Deposit
+	V2Claim
+	V1Claim
+	VerifyBatchesEtrog
+	VerifyTrustedSequencer
 )
 
 var (
 	bridgeEventTypeMap = map[ethgo.Hash]int{
-		l1InfoTreeEvent.ID():                    BridgeEventL1InfoTree,
-		v1GEREvent.ID():                         BridgeEventV1GER,
-		depositEvent.ID():                       BridgeEventDeposit,
-		claimEvent.ID():                         BridgeEventV2Claim,
-		oldClaimEvent.ID():                      BridgeEventV1Claim,
-		verifyBatchesEtrogEvent.ID():            BridgeEventVerifyBatchesEtrog,
-		verifyBatchesTrustedSequencerEvent.ID(): BridgeEventVerifyTrustedSequencer,
+		l1InfoTreeEvent.ID():                    L1InfoTree,
+		v1GEREvent.ID():                         V1GER,
+		depositEvent.ID():                       Deposit,
+		claimEvent.ID():                         V2Claim,
+		oldClaimEvent.ID():                      V1Claim,
+		verifyBatchesEtrogEvent.ID():            VerifyBatchesEtrog,
+		verifyBatchesTrustedSequencerEvent.ID(): VerifyTrustedSequencer,
 	}
 
 	bridgeEventParseMap = map[int]func(log *ethgo.Log) (map[string]interface{}, error){
-		BridgeEventL1InfoTree:             l1InfoTreeEvent.ParseLog,
-		BridgeEventV1GER:                  v1GEREvent.ParseLog,
-		BridgeEventDeposit:                depositEvent.ParseLog,
-		BridgeEventV2Claim:                claimEvent.ParseLog,
-		BridgeEventV1Claim:                oldClaimEvent.ParseLog,
-		BridgeEventVerifyBatchesEtrog:     verifyBatchesEtrogEvent.ParseLog,
-		BridgeEventVerifyTrustedSequencer: verifyBatchesTrustedSequencerEvent.ParseLog,
+		L1InfoTree:             l1InfoTreeEvent.ParseLog,
+		V1GER:                  v1GEREvent.ParseLog,
+		Deposit:                depositEvent.ParseLog,
+		V2Claim:                claimEvent.ParseLog,
+		V1Claim:                oldClaimEvent.ParseLog,
+		VerifyBatchesEtrog:     verifyBatchesEtrogEvent.ParseLog,
+		VerifyTrustedSequencer: verifyBatchesTrustedSequencerEvent.ParseLog,
 	}
 )
 

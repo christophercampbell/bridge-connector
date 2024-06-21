@@ -81,13 +81,17 @@ func run(cliCtx *cli.Context) error {
 			log.Infof("Disabled %s indexer, chain_id %d", chain.Name, chain.ChainId)
 			continue
 		}
-		indexer, err := indexer.New(chain, cfg.Contracts, store)
+		var service *indexer.Service
+		service, err = indexer.New(chain, cfg.Contracts, store)
 		if err != nil {
 			panic(err)
 		}
-		stopFuncs = append(stopFuncs, indexer.Stop)
+		stopFuncs = append(stopFuncs, service.Stop)
 		log.Infof("Starting %s indexer, chain_id %d", chain.Name, chain.ChainId)
-		indexer.Start(parentContext)
+		err = service.Start(parentContext)
+		if err != nil {
+			log.Warnf("[%s] Indexer service failed to start: %+v", chain.Name, err)
+		}
 	}
 	defer stopAll(stopFuncs)
 

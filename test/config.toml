@@ -25,9 +25,9 @@ Enabled = false
 ChainId = 1
 RpcURL = "???"  ### need RPC for mainnet
 [Chains.Indexer]
-RateLimit = "100ms"
-BlockBatchSize = 1000
-GenesisBlock = 18064563
+    RateLimit = "100ms"
+    BlockBatchSize = 1000
+    GenesisBlock = 18064563
 
 [[Chains]] # ZKE-Mainnet
 Name = "ZKE-Mainnet"
@@ -35,9 +35,9 @@ Enabled = true
 ChainId = 1101
 RpcURL = "https://zkevm-rpc.com/"
 [Chains.Indexer]
-RateLimit = "100ms" # 1 request per duration
-BlockBatchSize = 100 ## 1000 returns too many events sometimes
-GenesisBlock = 0
+    RateLimit = "100ms" # 1 request per duration
+    BlockBatchSize = 100 ## 1000 returns too many events sometimes
+    GenesisBlock = 0
 
 [[Chains]] # Astar-zkevm
 Name = "Astar"
@@ -45,9 +45,9 @@ Enabled = true
 ChainId = 3776
 RpcURL = "https://rpc.astar-zkevm.gelato.digital"
 [Chains.Indexer]
-RateLimit = "100ms" # 1 request per duration
-BlockBatchSize = 1000
-GenesisBlock = 0
+    RateLimit = "100ms" # 1 request per duration
+    BlockBatchSize = 100
+    GenesisBlock = 0
 
 [[Chains]] # OKX
 Name = "OKX"
@@ -56,7 +56,7 @@ ChainId = 196
 RpcURL = "https://rpc.xlayer.tech"
 [Chains.Indexer]
 RateLimit = "100ms" # 1 request per duration
-BlockBatchSize = 1000
+BlockBatchSize = 100
 GenesisBlock = 0
 
 

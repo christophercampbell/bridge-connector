@@ -44,10 +44,10 @@ CREATE TABLE IF NOT EXISTS last_processed_block (
 	block_number INTEGER NOT NULL
 );
 `
-	upsertLastBlockStatement = `
+	upsertLastBlockStatement string = `
 INSERT INTO last_processed_block (chain_id, block_number) VALUES (?, ?) 
                                                           ON CONFLICT(chain_id)
                                                           DO UPDATE set block_number = EXCLUDED.block_number`
 
-	selectLastProcessedBlockStatement = `SELECT block_number FROM last_processed_block WHERE chain_id = ?`
+	selectLastProcessedBlockStatement string = `SELECT block_number FROM last_processed_block WHERE chain_id = ?`
 )

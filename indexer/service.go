@@ -90,27 +90,31 @@ func (s *Service) processEvents(ctx context.Context) {
 		next := s.lastBlock + 1
 		events, err := s.retrieveEvents(next, s.batchSize)
 		if err != nil {
-			log.Errorf("could not retrieve events: %+v", err)
+			log.Errorf("[%s] could not retrieve events: %+v", s.name, err)
 			continue
 		}
 
 		err = s.store.StoreEvents(s.chainId, events)
 		if err != nil {
-			log.Errorf("could not store events: %+v", err)
+			log.Errorf("[%s] could not store events: %+v", s.name, err)
 			continue
 		}
 
 		// Don't advance beyond last block
+
+		// Instead of this, it should be called once, and the sync'r will go til that block end
+		// then pause, get latest block number and start sync'ing till new end.. that will
+		// save a RPC call per block batch
 		chainEnd, err := s.rpc.Eth().BlockNumber()
 		if err != nil {
-			log.Errorf("failed to get chain block length: %+v", err)
+			log.Errorf("[%s] failed to get chain block length: %+v", s.name, err)
 			continue
 		}
 		youngestBlock := uint64(math.Min(float64(chainEnd), float64(next+uint64(s.batchSize))))
 
 		err = s.store.UpdateLastProcessedBlock(s.chainId, youngestBlock)
 		if err != nil {
-			log.Errorf("could not update last processed block: %+v", err)
+			log.Errorf("[%s] could not update last processed block: %+v", s.name, err)
 			continue
 		}
 
