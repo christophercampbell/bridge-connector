@@ -1,4 +1,3 @@
 # bridge-connector
 
-- index bridge events on L2 & L1
-- periodically post events to the AggLayer
+This project indexes bridge events on a configurable set of chains, and stores the events in sqlite, producing an artifact for testing bridge event processors. 
