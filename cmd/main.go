@@ -77,21 +77,18 @@ func run(cliCtx *cli.Context) error {
 	var stopFuncs []context.CancelFunc
 
 	for _, chain := range cfg.Chains {
+		scopedLogger := log.WithFields("chain", chain.Name, "chain_id", chain.ChainId)
 		if !chain.Enabled {
-			log.Infof("Disabled %s indexer, chain_id %d", chain.Name, chain.ChainId)
+			scopedLogger.Infof("Disabled indexer")
 			continue
 		}
 		var service *indexer.Service
-		service, err = indexer.New(chain, cfg.Contracts, store)
+		service, err = indexer.New(chain, cfg.Contracts, store, scopedLogger)
 		if err != nil {
 			panic(err)
 		}
 		stopFuncs = append(stopFuncs, service.Stop)
-		log.Infof("Starting %s indexer, chain_id %d", chain.Name, chain.ChainId)
-		err = service.Start(parentContext)
-		if err != nil {
-			log.Warnf("[%s] Indexer service failed to start: %+v", chain.Name, err)
-		}
+		service.Start(parentContext)
 	}
 	defer stopAll(stopFuncs)
 
@@ -112,7 +109,7 @@ func waitInterrupt() {
 	for sig := range signals {
 		switch sig {
 		case os.Interrupt, os.Kill:
-			log.Info("terminating application gracefully...")
+			log.Info("terminating application")
 			os.Exit(0)
 		}
 	}

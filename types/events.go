@@ -25,7 +25,7 @@ func (be *BridgeEvent) JsonData() (string, error) {
 }
 
 func (be *BridgeEvent) SetData(jsonStr string) error {
-	var data map[string]interface{}
+	var data map[string]interface{} // TODO: convert []bytes -> hex?
 	err := json.Unmarshal([]byte(jsonStr), &data)
 	if err != nil {
 		return err

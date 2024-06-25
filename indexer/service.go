@@ -26,9 +26,10 @@ type Service struct {
 	cancelFunc context.CancelFunc
 	lastBlock  uint64
 	rateLimit  time.Duration
+	logger     *log.Logger
 }
 
-func New(config config.ChainConfig, contracts config.Contracts, store *db.Storage) (*Service, error) {
+func New(config config.ChainConfig, contracts config.Contracts, store *db.Storage, logger *log.Logger) (*Service, error) {
 	jsonrpcClient, err := jsonrpc.NewClient(config.RpcURL)
 	if err != nil {
 		return nil, err
@@ -52,6 +53,7 @@ func New(config config.ChainConfig, contracts config.Contracts, store *db.Storag
 		cancelFunc: nil,
 		once:       sync.Once{},
 		rateLimit:  config.IndexerConfig.RateLimit.Duration,
+		logger:     logger,
 	}
 
 	var lastBlock uint64
@@ -66,14 +68,13 @@ func New(config config.ChainConfig, contracts config.Contracts, store *db.Storag
 	return &service, nil
 }
 
-func (s *Service) Start(parentContext context.Context) error {
+func (s *Service) Start(parentContext context.Context) {
 	s.once.Do(func() {
+		s.logger.Infof("Starting indexer")
 		ctx, cancel := context.WithCancel(parentContext)
 		s.cancelFunc = cancel
-
 		go s.processEvents(ctx)
 	})
-	return nil
 }
 
 func (s *Service) processEvents(ctx context.Context) {
@@ -90,13 +91,13 @@ func (s *Service) processEvents(ctx context.Context) {
 		next := s.lastBlock + 1
 		events, err := s.retrieveEvents(next, s.batchSize)
 		if err != nil {
-			log.Errorf("[%s] could not retrieve events: %+v", s.name, err)
+			s.logger.Warnf("could not retrieve events: %+v", err)
 			continue
 		}
 
 		err = s.store.StoreEvents(s.chainId, events)
 		if err != nil {
-			log.Errorf("[%s] could not store events: %+v", s.name, err)
+			s.logger.Warnf("could not store events: %+v", err)
 			continue
 		}
 
@@ -107,15 +108,22 @@ func (s *Service) processEvents(ctx context.Context) {
 		// save a RPC call per block batch
 		chainEnd, err := s.rpc.Eth().BlockNumber()
 		if err != nil {
-			log.Errorf("[%s] failed to get chain block length: %+v", s.name, err)
+			log.Errorf("failed to get chain block length: %+v", err)
 			continue
 		}
 		youngestBlock := uint64(math.Min(float64(chainEnd), float64(next+uint64(s.batchSize))))
 
 		err = s.store.UpdateLastProcessedBlock(s.chainId, youngestBlock)
 		if err != nil {
-			log.Errorf("[%s] could not update last processed block: %+v", s.name, err)
+			s.logger.Warnf("could not update last processed block: %+v", err)
 			continue
+		}
+
+		left := uint(math.Abs(float64(youngestBlock) - float64(s.lastBlock)))
+		if left < s.batchSize {
+			// this should maybe just be a message & an increased pause
+			s.logger.Infof("finished at block %d", s.lastBlock)
+			return
 		}
 
 		s.lastBlock = youngestBlock
